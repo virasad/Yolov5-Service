@@ -23,5 +23,5 @@ send sample image with `test_req.py` code.
 
 
 ## Training
-[] To be continued...
+[ ] To be continued...
 
