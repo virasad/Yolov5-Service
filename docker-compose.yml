@@ -1,0 +1,17 @@
+version: "3.8"
+    inference:
+        container_name: "yolov5"
+        build: "./backbone"
+        environment:
+            - PORT=5000
+            - MODEL_PATH=weights/best.pt
+        ports:
+            - '5000:5000'
+        command: "python3 app.py"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - capabilities: [gpu]
+
+    #TODO train:
