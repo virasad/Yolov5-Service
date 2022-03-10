@@ -27,8 +27,8 @@
 `weights` : yolo weights names (`yolov5n.pt`, `yolov5s.pt`, ...)\
 `isAugment` : if true , You have to set `augmentParams` for augmenting datasets\
 `validationSplit` : train and validation split (default:0.2)\
-`dataType` : `yolo` or `coco`
-`save_dir` : Path for saving model weights and results
+`dataType` : `yolo` or `coco`\
+`save_dir` : Path for saving model weights and results\
 `labelPath` : Path of text files (for yolo only)
 
 ### COCO Dataset:
