@@ -86,7 +86,7 @@ def train_model():
     )
 
     if iaAugment:
-        aug_params = req["augment_params"]
+        aug_params = req["augmentParams"]
         # Augment train Data
         aug = AMRLImageAug(normpth('tmp/DATASET/yolo_train/annotations'),
                            normpth('tmp/DATASET/yolo_train/images'),
