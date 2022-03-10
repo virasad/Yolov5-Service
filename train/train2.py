@@ -17,6 +17,7 @@ import math
 import os
 import random
 import sys
+import requests
 import time
 from copy import deepcopy
 from datetime import datetime
@@ -377,8 +378,31 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            plots=False,
                                            callbacks=callbacks,
                                            compute_loss=compute_loss)
-            print("Results: ", results)
-            print("mAP: ", maps)
+
+            # Send log to url
+            log_result = {
+                    "mean_precision": results[0],
+                    "mean_recall": results[1],
+                    "mAP0.5": results[2],
+                    "mAP0.5:0.95": results[3],
+                    "box_loss": float(mloss[0]),
+                    "obj_loss": float(mloss[1]),
+                    "cls_loss": float(mloss[2]),
+                    "gpu_mem": str(mem),
+                    "epoch": epoch + 1,
+                    "max_epoch": epochs,
+                    "progress": (epoch + 1) * 100 / epochs
+                }
+
+            headers = CaseInsensitiveDict()
+            headers["Content-Type"] = "application/json"
+            data_json = f'{log_result}'
+            if url != None or url=="":
+                url = opt.log_url
+                resp = requests.post(url, headers=headers, data=data_json)
+                if resp.status_code != 200:
+                    print(f"log didn't send, code {resp.status_code}")
+
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             if fi > best_fitness:
@@ -486,6 +510,7 @@ def parse_opt(known=False):
     parser.add_argument('--freeze', nargs='+', type=int, default=[0], help='Freeze layers: backbone=10, first3=0 1 2')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    parser.add_argument('--log_url', type=str, default=None, help='send log url')
 
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
@@ -503,6 +528,37 @@ def main(opt, callbacks=Callbacks()):
         print_args(FILE.stem, opt)
         check_git_status()
         check_requirements(exclude=['thop'])
+
+    # Resume
+    if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
+        ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
+        assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
+        with open(Path(ckpt).parent.parent / 'opt.yaml', errors='ignore') as f:
+            opt = argparse.Namespace(**yaml.safe_load(f))  # replace
+        opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
+        LOGGER.info(f'Resuming training from {ckpt}')
+    else:
+        opt.data, opt.cfg, opt.hyp, opt.weights, opt.project = \
+            check_file(opt.data), check_yaml(opt.cfg), check_yaml(opt.hyp), str(opt.weights), str(opt.project)  # checks
+        assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
+        if opt.evolve:
+            if opt.project == str(ROOT / 'runs/train'):  # if default project name, rename to runs/evolve
+                opt.project = str(ROOT / 'runs/evolve')
+            opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
+        opt.save_dir = str(increment_path(Path(opt.save_dir) / opt.name, exist_ok=opt.exist_ok))
+
+    # DDP mode
+    device = select_device(opt.device, batch_size=opt.batch_size)
+    if LOCAL_RANK != -1:
+        msg = 'is not compatible with YOLOv5 Multi-GPU DDP training'
+        assert not opt.image_weights, f'--image-weights {msg}'
+        assert not opt.evolve, f'--evolve {msg}'
+        assert opt.batch_size != -1, f'AutoBatch with --batch-size -1 {msg}, please pass a valid --batch-size'
+        assert opt.batch_size % WORLD_SIZE == 0, f'--batch-size {opt.batch_size} must be multiple of WORLD_SIZE'
+        assert torch.cuda.device_count() > LOCAL_RANK, 'insufficient CUDA devices for DDP command'
+        torch.cuda.set_device(LOCAL_RANK)
+        device = torch.device('cuda', LOCAL_RANK)
+        dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
 
     # Train
     if not opt.evolve:
