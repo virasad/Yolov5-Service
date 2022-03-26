@@ -14,20 +14,19 @@ Usage:
 
 import argparse
 import math
+import numpy as np
 import os
 import random
-import sys
 import requests
+import sys
 import time
-from copy import deepcopy
-from datetime import datetime
-from pathlib import Path
-
-import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import SGD, Adam, AdamW, lr_scheduler
@@ -381,23 +380,23 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
             # Send log to url
             log_result = {
-                    "mean_precision": results[0],
-                    "mean_recall": results[1],
-                    "mAP0.5": results[2],
-                    "mAP0.5:0.95": results[3],
-                    "box_loss": float(mloss[0]),
-                    "obj_loss": float(mloss[1]),
-                    "cls_loss": float(mloss[2]),
-                    "gpu_mem": str(mem),
-                    "epoch": epoch + 1,
-                    "max_epoch": epochs,
-                    "progress": (epoch + 1) * 100 / epochs
-                }
+                "mean_precision": results[0],
+                "mean_recall": results[1],
+                "mAP0.5": results[2],
+                "mAP0.5:0.95": results[3],
+                "box_loss": float(mloss[0]),
+                "obj_loss": float(mloss[1]),
+                "cls_loss": float(mloss[2]),
+                "gpu_mem": str(mem),
+                "epoch": epoch + 1,
+                "max_epoch": epochs,
+                "progress": (epoch + 1) * 100 / epochs
+            }
 
             headers = CaseInsensitiveDict()
             headers["Content-Type"] = "application/json"
             data_json = f'{log_result}'
-            if url != None or url=="":
+            if url != None or url == "":
                 url = opt.log_url
                 resp = requests.post(url, headers=headers, data=data_json)
                 if resp.status_code != 200:
