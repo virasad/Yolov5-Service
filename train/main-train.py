@@ -6,20 +6,12 @@ from my_utils.yaml_file import dict_to_yaml
 from preimutils.preimutils.object_detection.yolo import AMRLImageAug
 from preimutils.preimutils.object_detection.yolo.coco2yolo import COCO2YOLO
 from preimutils.preimutils.object_detection.yolo.train_validation_sep import separate_test_val
-
+from yolov5 import train
 
 normpth = os.path.normpath
 
 app = Flask(__name__)
 TRAIN_URL = "/"
-
-# copy train2.py file to yolov5 folder
-# shutil.copyfile(normpth(__file__), normpth(os.path.join(os.path.dirname(__file__), "yolov5", "train2.py")))   # copy train2.py file to yolov5 folder
-'''directory = os.path.dirname(__file__)
-train2_path = os.path.join(directory, "yolov5", "train2.py")
-if not os.path.exists(train2_path):
-    shutil.copyfile(normpth(__file__), normpth(train2_path))'''
-from yolov5 import train2
 
 
 @app.route(os.path.join(TRAIN_URL, 'train'), methods=["POST"])
@@ -148,7 +140,7 @@ def train_model():
     dict_to_yaml(d, 'tmp/data.yaml')
     save_dir = normpth(req['save_dir'])
     # Training yolo
-    train2.run(data='tmp/data.yaml', imgsz=image_size, weights=weight, save_dir=save_dir, log_url=Log_url)
+    train.run(data='tmp/data.yaml', imgsz=image_size, weights=weight, save_dir=save_dir, log_url=Log_url)
 
     # delete temp file
     if os.path.exists('tmp') and os.path.isdir('tmp'):

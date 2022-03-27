@@ -1,12 +1,12 @@
 # YOLOv5 train API
 
-## How to run
-1. copy `train2.py` in yolov5 directory
-2. run main file : `python main-train.py`
-
+## How to use
+```bash
+python main-train.py
+```
 ## Parameters:
 
-```
+```json
 {
 "label":,
 "imagePath":,
