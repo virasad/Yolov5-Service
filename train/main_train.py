@@ -1,8 +1,8 @@
 import os
 import shutil
 from flask import Flask, request
-from my_utils.utils import dict_to_json, mkdir_p, movefiles, jsonfile2dict
-from my_utils.yaml_file import dict_to_yaml
+from utils.utils import dict_to_json, mkdir_p, movefiles, jsonfile2dict
+from utils.yaml_file import dict_to_yaml
 from preimutils.preimutils.object_detection.yolo import AMRLImageAug
 from preimutils.preimutils.object_detection.yolo.coco2yolo import COCO2YOLO
 from preimutils.preimutils.object_detection.yolo.train_validation_sep import separate_test_val
@@ -18,14 +18,14 @@ TRAIN_URL = "/"
 def train_model():
     req = request.json
     data = req["label"]
-    image_path = req["imagePath"]
+    image_path = req["image_path"]
     weight = req["weight"]
-    iaAugment = req["iaAugment"]
-    validation_split = req["validationSplit"]
-    dataType = req["dataType"]
+    is_augment = req["is_augment"]
+    validation_split = req["validation_split"]
+    data_type = req["data_type"]
 
     try:
-        image_size = req["imageSize"]
+        image_size = req["image_size"]
     except:
         image_size = 640
 
@@ -40,7 +40,7 @@ def train_model():
     os.makedirs(os.path.join('tmp/DATASET/raw_annotations/'))
     image_path = normpth(image_path)
 
-    if dataType == "coco":
+    if data_type == "coco":
         # Save coco file in temp folder
         dict_to_json(data, os.path.join('tmp', 'coco.json'))
         # Load coco.json file
@@ -65,8 +65,8 @@ def train_model():
         classes = c2y._categories()
         classes = list(classes.values())
 
-    elif dataType == 'yolo':
-        label_path = req["labelPath"]
+    elif data_type == 'yolo':
+        label_path = req["label_path"]
         classes = data
         os.makedirs('tmp/DATASET/raw_images')
         print(image_path, label_path)
@@ -85,8 +85,8 @@ def train_model():
         validation_percentage=validation_split
     )
 
-    if iaAugment:
-        aug_params = req["augmentParams"]
+    if is_augment:
+        aug_params = req["augment_params"]
         # Augment train Data
         aug = AMRLImageAug(normpth('tmp/DATASET/yolo_train/annotations'),
                            normpth('tmp/DATASET/yolo_train/images'),

@@ -213,3 +213,5 @@ cython_debug/
 
 __pycache__
 .idea/vcs.xml
+
+.idea
