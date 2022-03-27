@@ -5,4 +5,4 @@ RUN pip install preimutils
 WORKDIR /code/
 COPY . /code/
 
-CMD ['python', 'main-train.py']
+CMD ['python3', 'main-train.py']
