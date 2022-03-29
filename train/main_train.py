@@ -2,11 +2,13 @@ import os
 import shutil
 from flask import Flask, request
 from utils.utils import dict_to_json, mkdir_p, movefiles, jsonfile2dict
+import json
 from utils.yaml_file import dict_to_yaml
 from preimutils.preimutils.object_detection.yolo import AMRLImageAug
 from preimutils.preimutils.object_detection.yolo.coco2yolo import COCO2YOLO
 from preimutils.preimutils.object_detection.yolo.train_validation_sep import separate_test_val
 from yolov5 import train
+import requests
 
 normpth = os.path.normpath
 
@@ -145,6 +147,19 @@ def train_model():
     # delete temp file
     if os.path.exists('tmp') and os.path.isdir('tmp'):
         shutil.rmtree('tmp')
+
+    resp_data = {
+        'save_dir': save_dir,
+        'model_dir': os.path.join(save_dir, 'weights/best.pt'),
+        'classes': classes
+    }
+    # convert post_data to json
+    resp_data = json.dumps(resp_data)
+    # get end_url from os environment variable
+    resp_url = os.environ.get('RESPONSE_URL')
+    requests.post(resp_url, json=resp_data)
+
+        
 
 
 if __name__ == "__main__":
