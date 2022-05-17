@@ -1,6 +1,7 @@
 version: "3.8"
+services:
     inference:
-        container_name: "yolov5"
+        container_name: "yolov5-inference"
         build: "./backbone"
         environment:
             - PORT=5000
@@ -14,4 +15,16 @@ version: "3.8"
                     devices:
                         - capabilities: [gpu]
 
-    #TODO train:
+    rain:
+        container_name: "yolov5-train"
+        build: "./train"
+        environment:
+            - RESPONSE_URL=
+        ports:
+            - '8000:8000'
+        command: "python3 main_train.py"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - capabilities: [gpu]
