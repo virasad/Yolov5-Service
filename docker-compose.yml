@@ -15,16 +15,16 @@ services:
                     devices:
                         - capabilities: [gpu]
 
-    rain:
-        container_name: "yolov5-train"
-        build: "./train"
-        environment:
-            - RESPONSE_URL=
-        ports:
-            - '8000:8000'
-        command: "python3 main_train.py"
-        deploy:
-            resources:
-                reservations:
-                    devices:
-                        - capabilities: [gpu]
+    train:
+         container_name: "yolov5-train"
+         build: "./train"
+         environment:
+             - RESPONSE_URL=
+         ports:
+             - '8000:8000'
+         command: "python3 main_train.py"
+         deploy:
+             resources:
+                 reservations:
+                     devices:
+                         - capabilities: [gpu]
