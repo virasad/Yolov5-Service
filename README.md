@@ -23,5 +23,22 @@ send sample image with `test_req.py` code.
 
 
 ## Training
-[ ] To be continued...
+
+### Send Train Request
+
+```json
+{
+  "label": "label Path or Coco annotation json",
+  "image_path": "images path",
+  "weights_path": "path tp pretrained weights",
+  "is_augment": "true or false for data augmentation",
+  "augment_params" : "Augmentation Params", -required if is_augment is True
+  "validation_split": "Validation Split Number to split train and validation",
+  "data_type": "Coco or yolo data type",  
+  "image_size": "image size to resize",
+  "log_url": "log url to get training status",
+  "label_path": "label path to get label (used for yolo data type)",
+  "save_dir": "save directory to save trained model"
+}
+```
 
