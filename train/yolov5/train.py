@@ -14,19 +14,20 @@ Usage:
 
 import argparse
 import math
-import numpy as np
 import os
 import random
-import requests
 import sys
 import time
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
+import json
+import requests
+import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
-from copy import deepcopy
-from datetime import datetime
-from pathlib import Path
 from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import SGD, Adam, AdamW, lr_scheduler
@@ -377,8 +378,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            plots=False,
                                            callbacks=callbacks,
                                            compute_loss=compute_loss)
-
-            # Send log to url
+            # Send logs
             log_result = {
                 "mean_precision": results[0],
                 "mean_recall": results[1],
@@ -392,13 +392,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 "max_epoch": epochs,
                 "progress": (epoch + 1) * 100 / epochs
             }
+            log_result = json.dumps(log_result)
 
-            headers = CaseInsensitiveDict()
-            headers["Content-Type"] = "application/json"
-            data_json = f'{log_result}'
             if url != None or url == "":
                 url = opt.log_url
-                resp = requests.post(url, headers=headers, data=data_json)
+                resp = requests.post(url, json=log_result)
+
                 if resp.status_code != 200:
                     print(f"log didn't send, code {resp.status_code}")
 
@@ -544,7 +543,7 @@ def main(opt, callbacks=Callbacks()):
             if opt.project == str(ROOT / 'runs/train'):  # if default project name, rename to runs/evolve
                 opt.project = str(ROOT / 'runs/evolve')
             opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
-        opt.save_dir = str(increment_path(Path(opt.save_dir) / opt.name, exist_ok=opt.exist_ok))
+        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)
