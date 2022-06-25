@@ -31,6 +31,7 @@ send sample image with `test_req.py` code.
   "label": "label Path or Coco annotation json",
   "image_path": "images path",
   "weights_path": "path tp pretrained weights",
+  "epochs" :"Number of train epochs"
   "is_augment": "true or false for data augmentation",
   "augment_params" : "Augmentation Params", -required if is_augment is True
   "validation_split": "Validation Split Number to split train and validation",

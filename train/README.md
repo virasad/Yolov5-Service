@@ -1,16 +1,28 @@
 # YOLOv5 train API
+At the first copy your dataset folder includes images and labels in volumes folder. So you should have a folder structure like this for yolo format dataset:
+
+    volumes/
+        dataset/
+            images/
+                *.jpg
+            labels/
+                *.txt
+        weights/
 
 ## How to use
+After 1) run train container with docker compose up command and 2) change train hyperparameters in req_train.py as you want, you can use the following commands to train your model.
+
 ```bash
-python main_train.py
+python req_train.py
 ```
-## Parameters:
+## HyperParameters:
 
 ```json
 {
   "label":,
   "image_path":,
   "label_path":,
+  "epochs":,
   "log_url":,
   "image_size":,
   "weight":,
