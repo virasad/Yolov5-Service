@@ -1,2 +1,4 @@
 Flask
 preimutils
+opencv-python
+waitress
