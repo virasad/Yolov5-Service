@@ -19,6 +19,7 @@ def send_cv2_image(cv2image, detection_url):
     img_bytes = cv2.imencode('.jpg', cv2image)[1].tobytes()
     response = requests.post(detection_url, files={"image": img_bytes}).json()
     pprint.pprint(response)
+    return response
 
 
 if __name__ == "__main__":
