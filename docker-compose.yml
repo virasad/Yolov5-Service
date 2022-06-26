@@ -3,12 +3,15 @@ services:
     inference:
         container_name: "yolov5-inference"
         build: "./backbone"
-        environment:
-            - PORT=5000
-            - MODEL_PATH=weights/best.pt
         ports:
             - '5000:5000'
+        volumes:
+            - ./backbone:/code
         command: "python3 app.py"
+        environment:
+            - MODEL_PATH=/code/weights/best.pt
+        ipc: host
+        shm_size: 1024M
         deploy:
             resources:
                 reservations:
@@ -16,15 +19,23 @@ services:
                         - capabilities: [gpu]
 
     train:
-         container_name: "yolov5-train"
-         build: "./train"
-         environment:
-             - RESPONSE_URL=
-         ports:
-             - '8000:8000'
-         command: "python3 main_train.py"
-         deploy:
-             resources:
-                 reservations:
-                     devices:
-                         - capabilities: [gpu]
+        container_name: "yolov5-train"
+        build: "./train"
+        shm_size: '2gb'
+        command: "python3 main_train.py"
+        environment:
+            - RESPONSE_URL=http://127.0.0.1:8000/response
+            - LOGGER_URL=http://127.0.0.1:8000/logger
+            - IS_LOGGER_ON=False
+        ports:
+            - '8000:8000'
+        volumes:
+            - ./train:/code
+            - ./volumes/weights:/code/weights
+            - ./volumes/dataset:/code/dataset
+        ipc: host
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - capabilities: [gpu]

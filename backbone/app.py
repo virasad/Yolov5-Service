@@ -2,9 +2,7 @@
 """
 Run a rest API exposing the yolov5s object detection model
 """
-import argparse
 import io
-
 from flask import Flask, request
 from PIL import Image
 from detect import Detector
@@ -36,8 +34,8 @@ def set_model():
     model_path = request.form.get("model_path")
     detector.set_model(model_path)
     return "Model set"
-    
 
-# if __name__ == "__main__":
-#     from waitress import serve
-#     serve(app, host="0.0.0.0", port=os.environ.get("PORT",5000))
+
+if __name__ == "__main__":
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=os.environ.get("PORT",5000))
