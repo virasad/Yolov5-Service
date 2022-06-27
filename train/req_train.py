@@ -6,8 +6,8 @@ from pathlib import Path
 def train_yolo_data(is_augment):
     url = 'http://127.0.0.1:8000/train'  # server url
     data = {'label': ['c1', 'c2'],  # one class
-            'image_path': '/code/dataset/images',
-            'label_path': '/code/dataset/labels',
+            'image_path': '/dataset/images',
+            'label_path': '/dataset/labels',
             'image_size': 640,
             'epochs': 7,
             'weight': 'yolov5n.pt',
@@ -16,7 +16,7 @@ def train_yolo_data(is_augment):
             'save_dir': 'results/',
             'is_augment': is_augment}
     r = requests.post(url, json=data)
-    print(r.text)
+    return r.text
 
 
 def train_coco_data(is_augment):
@@ -27,7 +27,7 @@ def train_coco_data(is_augment):
     with open(path) as f:
         coco_annotation = json.load(f)
     data = {'label': coco_annotation,
-            'image_path': '/code/dataset/images',
+            'image_path': '/dataset/images',
             'image_size': 640,
             'epochs': 7,
             'weight': 'yolov5n.pt',
@@ -36,7 +36,7 @@ def train_coco_data(is_augment):
             'save_dir': 'results/',
             'is_augment': is_augment}
     r = requests.post(url, json=data)
-    print(r.text)
+    return r.text
 
 
 if __name__ == '__main__':
