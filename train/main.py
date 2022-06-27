@@ -1,7 +1,6 @@
 import os
 import shutil
 from fastapi import FastAPI, Request
-import uvicorn
 from util.util import dict_to_json, mkdir_p, movefiles, jsonfile2dict
 import json
 from util.yaml_file import dict_to_yaml
@@ -47,7 +46,6 @@ async def train_model(request: Request):
     # make raw Label Folder
     os.makedirs(os.path.join('tmp/DATASET/raw_annotations/'))
     image_path = normpath(image_path)
-    print(data)
     if data_type == "coco":
         # Save coco file in temp folder
         dict_to_json(data, os.path.join('tmp', 'coco.json'))
@@ -137,7 +135,3 @@ async def train_model(request: Request):
     resp_url = os.environ.get('RESPONSE_URL')
     requests.post(resp_url, json=resp_data)
     return resp_data
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
