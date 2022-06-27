@@ -31,7 +31,8 @@ services:
         volumes:
             - ./train:/code
             - ./volumes/weights:/weights
-            - ./volumes/dataset:/dataset
+            - ./volumes/dataset/images:/dataset/images
+            - ./volumes/dataset/labels:/dataset/labels
         ipc: host
         deploy:
             resources:
