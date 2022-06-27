@@ -3,8 +3,7 @@
 Run a rest API exposing the yolov5s object detection model
 """
 import io
-from fastapi import FastAPI, File, UploadFile
-import uvicorn
+from fastapi import FastAPI, File, UploadFile, Request, Form
 from PIL import Image
 from detect import Detector
 import os
@@ -18,12 +17,15 @@ detector = Detector()
 
 @app.post(os.path.join(DETECTION_URL, 'detect'))
 async def predict(image: UploadFile = File(...)):
-
     contents = await image.read()
     img = Image.open(io.BytesIO(contents))
     results = detector.detect(img)
     return results.to_json(orient="records")
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+@app.post(os.path.join(DETECTION_URL, 'set-model'))
+async def set_model(request: Request, model_path: str = Form(...)):
+    form_data = await request.form()
+    model_path = form_data.get('model_path')
+    detector.set_model(model_path)
+    return {'message': 'ok'}
