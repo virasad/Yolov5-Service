@@ -2,14 +2,13 @@ version: "3.8"
 services:
     inference:
         container_name: "yolov5-inference"
-        build: "./backbone"
+        build: "./inference"
         ports:
             - '5000:5000'
         volumes:
-            - ./backbone:/code
-        command: "python3 app.py"
-        environment:
-            - MODEL_PATH=/code/weights/best.pt
+            - ./inference:/code
+            - ./volumes/weights:/weights
+        command: "uvicorn main:app --host 0.0.0.0 --port 5000 --reload"
         ipc: host
         shm_size: 1024M
         deploy:
@@ -22,7 +21,7 @@ services:
         container_name: "yolov5-train"
         build: "./train"
         shm_size: '2gb'
-        command: "python3 main_train.py"
+        command: "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
         environment:
             - RESPONSE_URL=http://127.0.0.1:8000/response
             - LOGGER_URL=http://127.0.0.1:8000/logger
@@ -31,8 +30,9 @@ services:
             - '8000:8000'
         volumes:
             - ./train:/code
-            - ./volumes/weights:/code/weights
-            - ./volumes/dataset:/code/dataset
+            - ./volumes/weights:/weights
+            - ./volumes/dataset/images:/dataset/images
+            - ./volumes/dataset/labels:/dataset/labels
         ipc: host
         deploy:
             resources:

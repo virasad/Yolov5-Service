@@ -1,50 +1,53 @@
-# YOLOv5 train API
-At the first copy your dataset folder includes images and labels in volumes folder. So you should have a folder structure like this for yolo format dataset:
+# YOLOv5 Training API
+For starting training, images and labels (yolo or coco format). So you should have a folder structure like this:
 
+    inference/
+        test_req.py
+        .dockerignore
+        Dockerfile
+        detect.py
+        main.py
+        README.md
+        requirements.txt
+    train/
+        util/
+        yolov5/
+        main.py
+        README.md
+        req_train.py
+        Dockerfile
+        requirements.txt
     volumes/
         dataset/
             images/
-                *.jpg
+              **image01.jpg**
+              **image02.jpg**
+              ...
             labels/
-                *.txt
+              **coco_annotation.json** >> (COCO Format)
+              image01.txt(YOLO Format)
+              image02.txt(YOLO Format)
+              ...(YOLO Format)
         weights/
+    .gitignore
+    docker-compose.yml
+    README.md
 
-## How to use
-After 1) run train container with docker compose up command and 2) change train hyperparameters in req_train.py as you want, you can use the following commands to train your model.
+## HyperParameters
 
-```bash
-python req_train.py
-```
-## HyperParameters:
-
+Train's hyperparameters are set in `train/req_train.py`. in this file, you can change them as you like. Hyperparameters which are used in training are:
 ```json
 {
-  "label":,
-  "image_path":,
-  "label_path":,
-  "epochs":,
-  "log_url":,
-  "image_size":,
-  "weight":,
-  "is_augment":,
-  "augment_params":,
-  "validation_split":,
-  "data_type":,
-  "save_dir":
+  "label": "label Path or Coco annotation json",
+  "image_path": "images path",
+  "weights_path": "path to pretrained weights",
+  "epochs" :"Number of train epochs",
+  "is_augment": "true or false for data augmentation",
+  "validation_split": "Validation Split rate to split train and validation",
+  "data_type": "COCO or YOLO data format",  
+  "image_size": "image size to resize",
+  "log_url": "log url to get training status",
+  "label_path": "label path to get label (used for yolo data type)",
+  "save_dir": "save directory to save trained model"
 }
 ```
-
-`image_path` : Path of All images\
-`image_size` : Size of images train by yolo (default:640)\
-`weights` : yolo weights names (`yolov5n.pt`, `yolov5s.pt`, ...)\
-`is_augment` : if true , You have to set `augment_params` for augmenting datasets\
-`validation_split` : train and validation split (default:0.2)\
-`data_type` : `yolo` or `coco`\
-`save_dir` : Path for saving model weights and results\
-`label_path` : Path of text files (for yolo only)
-
-### COCO Dataset:
-`label` : coco json annotation.
-
-### YOLO Dataset:
-`label` : list of clasees like `[class1, class2, ...]`
