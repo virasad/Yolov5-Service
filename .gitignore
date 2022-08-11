@@ -217,3 +217,7 @@ __pycache__
 .idea
 
 train/preimutils
+dataset/
+*.pt
+wandb/
+results/

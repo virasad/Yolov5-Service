@@ -46,7 +46,6 @@ async def train_model(labels: str,
                       batch_size: int = 2,
                       response_url: str = None,
                       log_url: str = None,
-                      is_augment: bool = False,
                       classes: list = None):
     if data_type not in ['yolo', 'coco']:
         return {'message': 'data_type must be yolo or coco'}
@@ -73,7 +72,6 @@ async def train_model(labels: str,
     images_path = normpath(images_path)
     labels = normpath(labels)
     dataset_dir = os.path.dirname(images_path)
-    print(dataset_dir)
     if data_type == 'coco':
         # check labels json
         if not os.path.isfile(labels):
@@ -131,7 +129,8 @@ async def train_model(labels: str,
     # save_dir = normpath(req['save_dir'])
     # Training yolo
     train.run(data=data_yml, imgsz=image_size, weights=weight,
-              save_dir=save_dir, epochs=epochs, batch_size=batch_size, project=save_dir, name='', exists_ok=True,)
+              save_dir=save_dir, epochs=epochs, batch_size=batch_size,
+              project=save_dir, name='', exists_ok=True, log_url=log_url)
     # # delete temp file
     # if os.path.exists('tmp') and os.path.isdir('tmp'):
     #     shutil.rmtree('tmp')
