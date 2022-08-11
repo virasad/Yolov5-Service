@@ -13,6 +13,7 @@ Usage:
 """
 
 import argparse
+import json
 import math
 import os
 import random
@@ -23,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import requests
 import torch
 import torch.distributed as dist
 import torch.nn as nn
@@ -362,6 +364,28 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                            compute_loss=compute_loss)
 
             # Update best mAP
+            # Send logs
+            log_dict = {
+                "mean_precision": results[0],
+                "mean_recall": results[1],
+                "mAP0.5": results[2],
+                "mAP0.5:0.95": results[3],
+                "box_loss": float(mloss[0]),
+                "obj_loss": float(mloss[1]),
+                "cls_loss": float(mloss[2]),
+                "gpu_mem": str(mem),
+                "epoch": epoch + 1,
+                "max_epoch": epochs,
+                "is_finished": final_epoch,
+            }
+
+            if opt.log_url:
+                log_result = json.dumps(log_dict)
+                resp = requests.post(opt.log_url, json=log_result)
+
+                if resp.status_code != 200:
+                    print(f"log didn't send, code {resp.status_code}")
+
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
             if fi > best_fitness:
@@ -423,6 +447,26 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         plots=plots,
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
+                    log_dict = {
+                        "mean_precision": results[0],
+                        "mean_recall": results[1],
+                        "mAP0.5": results[2],
+                        "mAP0.5:0.95": results[3],
+                        "box_loss": float(mloss[0]),
+                        "obj_loss": float(mloss[1]),
+                        "cls_loss": float(mloss[2]),
+                        "gpu_mem": str(mem),
+                        "epoch": epoch + 1,
+                        "max_epoch": epochs,
+                    }
+
+                    if opt.response_url:
+                        log_result = json.dumps(log_dict)
+                        resp = requests.post(opt.response_url, json=log_result)
+
+                        if resp.status_code != 200:
+                            print(f"log didn't send, code {resp.status_code}")
+
                     if is_coco:
                         callbacks.run('on_fit_epoch_end', list(mloss) + list(results) + lr, epoch, best_fitness, fi)
 

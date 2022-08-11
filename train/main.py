@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 
 import requests
 from fastapi import FastAPI
@@ -130,7 +129,8 @@ async def train_model(labels: str,
     # Training yolo
     train.run(data=data_yml, imgsz=image_size, weights=weight,
               save_dir=save_dir, epochs=epochs, batch_size=batch_size,
-              project=save_dir, name='', exists_ok=True, log_url=log_url)
+              project=save_dir, name='', exists_ok=True, log_url=log_url,
+              response_url=response_url)
     # # delete temp file
     # if os.path.exists('tmp') and os.path.isdir('tmp'):
     #     shutil.rmtree('tmp')
