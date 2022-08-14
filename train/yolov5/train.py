@@ -47,8 +47,8 @@ from utils.callbacks import Callbacks
 from utils.dataloaders import create_dataloader
 from utils.downloads import attempt_download, is_url
 from utils.general import (LOGGER, check_amp, check_dataset, check_file, check_git_status, check_img_size,
-                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run, increment_path,
-                           init_seeds, intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
+                           check_requirements, check_suffix, check_yaml, colorstr, get_latest_run, init_seeds,
+                           intersect_dicts, labels_to_class_weights, labels_to_image_weights, methods,
                            one_cycle, print_args, print_mutation, strip_optimizer)
 from utils.loggers import Loggers
 from utils.loggers.wandb.wandb_utils import check_wandb_resume
@@ -377,8 +377,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 "epoch": epoch + 1,
                 "max_epoch": epochs,
                 "is_finished": final_epoch,
+                "task_id": opt.task_id,
             }
-
+            print(log_dict)
             if opt.log_url:
                 log_result = json.dumps(log_dict)
                 resp = requests.post(opt.log_url, json=log_result)
@@ -447,6 +448,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         plots=plots,
                         callbacks=callbacks,
                         compute_loss=compute_loss)  # val best model with plots
+
                     log_dict = {
                         "mean_precision": results[0],
                         "mean_recall": results[1],
@@ -458,8 +460,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         "gpu_mem": str(mem),
                         "epoch": epoch + 1,
                         "max_epoch": epochs,
+                        'weight_path': os.path.abspath(best),
+                        "task_id": opt.task_id,
                     }
-
                     if opt.response_url:
                         log_result = json.dumps(log_dict)
                         resp = requests.post(opt.response_url, json=log_result)
@@ -553,7 +556,7 @@ def main(opt, callbacks=Callbacks()):
             opt.exist_ok, opt.resume = opt.resume, False  # pass resume to exist_ok and disable resume
         if opt.name == 'cfg':
             opt.name = Path(opt.cfg).stem  # use model.yaml as name
-        opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
+        opt.save_dir = str(Path(opt.project) / opt.name)
 
     # DDP mode
     device = select_device(opt.device, batch_size=opt.batch_size)

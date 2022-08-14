@@ -9,6 +9,7 @@ from util.train_validation_sep import separate_test_val
 from util.util import jsonfile2dict
 from util.yaml_file import dict_to_yaml
 from yolov5 import train
+import uuid
 
 normpath = os.path.normpath
 
@@ -42,10 +43,13 @@ async def train_model(labels: str,
                       validation_split: float = 0.2,
                       data_type: str = "yolo",
                       save_dir: str = "results/",
+                      task_id: str = "",
                       batch_size: int = 2,
                       response_url: str = None,
                       log_url: str = None,
                       classes: list = None):
+    if task_id == "":
+        task_id = str(uuid.uuid4())
     if data_type not in ['yolo', 'coco']:
         return {'message': 'data_type must be yolo or coco'}
     # check images dir
@@ -130,20 +134,10 @@ async def train_model(labels: str,
     train.run(data=data_yml, imgsz=image_size, weights=weight,
               save_dir=save_dir, epochs=epochs, batch_size=batch_size,
               project=save_dir, name='', exists_ok=True, log_url=log_url,
-              response_url=response_url)
+              response_url=response_url, task_id=task_id)
     # # delete temp file
     # if os.path.exists('tmp') and os.path.isdir('tmp'):
     #     shutil.rmtree('tmp')
-    #
-    resp_data = {
-        'save_dir': save_dir,
-        'model_dir': os.path.join(save_dir, 'weights/best.pt'),
-        'classes': classes
-    }
-    # convert post_data to json
-    resp_data = json.dumps(resp_data)
     # get end_url from os environment variable
 
-    if response_url:
-        requests.post(response_url, json=resp_data)
-    return resp_data
+    return {'message': 'training is done'}
