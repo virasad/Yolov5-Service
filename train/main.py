@@ -116,8 +116,8 @@ async def train_model(labels: str,
     train_images_dir, train_txts_dir, validation_images_dir, validation_txts_dir = separate_test_val(
         images_dir=images_path,
         txts_dir=labels_dir,
-        dst_validatoion_dir=train_dir,
-        dst_train_dir=test_dir,
+        dst_validatoion_dir=test_dir,
+        dst_train_dir=train_dir,
         validation_percentage=validation_split
     )
 
