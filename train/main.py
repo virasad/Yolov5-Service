@@ -144,6 +144,8 @@ async def train_model(labels: str,
 
         return {'message': 'training is done'}
     except Exception as e:
+        print(str(e))
         if except_url:
-            requests.post(url=except_url, data={'error message': e}, timeout=2)
+            requests.post(url=except_url, data={'error message': e,
+                                                'task_id': task_id}, timeout=2)
             return {'message': 'exception raised'}
