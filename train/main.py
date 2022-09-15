@@ -1,6 +1,6 @@
 import json
 import os
-
+import requests
 import requests
 from fastapi import FastAPI
 
@@ -47,97 +47,105 @@ async def train_model(labels: str,
                       batch_size: int = 2,
                       response_url: str = None,
                       log_url: str = None,
-                      classes: list = None):
-    if task_id == "":
-        task_id = str(uuid.uuid4())
-    if data_type not in ['yolo', 'coco']:
-        return {'message': 'data_type must be yolo or coco'}
-    # check images dir
-    if not os.path.isdir(images_path):
-        return {'message': 'image_path is not a directory'}
-    # check weight
-    weights_v5 = ['yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']
-    weights_v6 = ['yolov5n6.pt', 'yolov5s6.pt', 'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
+                      classes: list = None,
+                      except_url: str = None):
+    try:
+        if task_id == "":
+            task_id = str(uuid.uuid4())
+        if data_type not in ['yolo', 'coco']:
+            return {'message': 'data_type must be yolo or coco'}
+        # check images dir
+        if not os.path.isdir(images_path):
+            return {'message': 'image_path is not a directory'}
+        # check weight
+        weights_v5 = ['yolov5n.pt', 'yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']
+        weights_v6 = ['yolov5n6.pt', 'yolov5s6.pt', 'yolov5m6.pt', 'yolov5l6.pt', 'yolov5x6.pt']
 
-    if weight not in weights_v5 + weights_v6:
-        return {'message': 'weight must be one of yolov5n.pt, yolov5s.pt, yolov5m.pt, yolov5l.pt, yolov5x.pt, '
-                           'yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}
-        # v5 should have the image size of 640 x 640 and v6 should have the image size of 1280 x 1280
-    if weight in weights_v5:
-        if image_size != 640:
-            return {
-                'message': 'image_size must be 640 for yolov5n.pt, yolov5s.pt, yolov5m.pt, yolov5l.pt, yolov5x.pt'}
+        if weight not in weights_v5 + weights_v6:
+            return {'message': 'weight must be one of yolov5n.pt, yolov5s.pt, yolov5m.pt, yolov5l.pt, yolov5x.pt, '
+                            'yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}
+            # v5 should have the image size of 640 x 640 and v6 should have the image size of 1280 x 1280
+        if weight in weights_v5:
+            if image_size != 640:
+                return {
+                    'message': 'image_size must be 640 for yolov5n.pt, yolov5s.pt, yolov5m.pt, yolov5l.pt, yolov5x.pt'}
 
-    elif weight in weights_v6:
-        if image_size != 1280:
-            return {
-                'message': 'image_size must be 1280 for yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}
-    images_path = normpath(images_path)
-    labels = normpath(labels)
-    dataset_dir = os.path.dirname(images_path)
-    if data_type == 'coco':
-        # check labels json
-        if not os.path.isfile(labels):
-            # check extension of label file
-            if not labels.endswith('.json'):
-                return {'message': 'label is not a json file'}
-            return {'message': 'label_path is not a file'}
-        # check if label file is valid
-        try:
-            with open(labels) as f:
-                json.load(f)
-        except json.JSONDecodeError:
-            return {'message': 'label is not a valid json file'}
-        labels_dir = os.path.join(dataset_dir, 'labels')
-        os.makedirs(labels_dir, exist_ok=True)
-        c2y = COCO2YOLO(jsonfile2dict(labels),
-                        output=labels_dir)
-        c2y.coco2yolo()
-        classes = c2y.get_classes()
-        print(classes)
+        elif weight in weights_v6:
+            if image_size != 1280:
+                return {
+                    'message': 'image_size must be 1280 for yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}
+        images_path = normpath(images_path)
+        labels = normpath(labels)
+        dataset_dir = os.path.dirname(images_path)
+        if data_type == 'coco':
+            # check labels json
+            if not os.path.isfile(labels):
+                # check extension of label file
+                if not labels.endswith('.json'):
+                    return {'message': 'label is not a json file'}
+                return {'message': 'label_path is not a file'}
+            # check if label file is valid
+            try:
+                with open(labels) as f:
+                    json.load(f)
+            except json.JSONDecodeError:
+                return {'message': 'label is not a valid json file'}
+            labels_dir = os.path.join(dataset_dir, 'labels')
+            os.makedirs(labels_dir, exist_ok=True)
+            c2y = COCO2YOLO(jsonfile2dict(labels),
+                            output=labels_dir)
+            c2y.coco2yolo()
+            classes = c2y.get_classes()
+            print(classes)
 
-    elif data_type == 'yolo':
-        # check labels dir
-        if not os.path.isdir(labels):
-            return {'message': 'label is not a directory'}
+        elif data_type == 'yolo':
+            # check labels dir
+            if not os.path.isdir(labels):
+                return {'message': 'label is not a directory'}
 
-        # check if label dir is valid
-        if classes is None:
-            return {'message': 'classes is required in yolo data type'}
-        print(images_path, labels)
-        labels_dir = labels
+            # check if label dir is valid
+            if classes is None:
+                return {'message': 'classes is required in yolo data type'}
+            print(images_path, labels)
+            labels_dir = labels
 
 
-    train_dir = os.path.join(dataset_dir, 'train')
-    os.makedirs(train_dir, exist_ok=True)
-    test_dir = os.path.join(dataset_dir, 'val')
-    print(test_dir)
-    print(train_dir)
-    train_images_dir, train_txts_dir, validation_images_dir, validation_txts_dir = separate_test_val(
-        images_dir=images_path,
-        txts_dir=labels_dir,
-        dst_validatoion_dir=test_dir,
-        dst_train_dir=train_dir,
-        validation_percentage=validation_split
-    )
+        train_dir = os.path.join(dataset_dir, 'train')
+        os.makedirs(train_dir, exist_ok=True)
+        test_dir = os.path.join(dataset_dir, 'val')
+        print(test_dir)
+        print(train_dir)
+        train_images_dir, train_txts_dir, validation_images_dir, validation_txts_dir = separate_test_val(
+            images_dir=images_path,
+            txts_dir=labels_dir,
+            dst_validatoion_dir=test_dir,
+            dst_train_dir=train_dir,
+            validation_percentage=validation_split
+        )
 
-    d = {
-        'train': os.path.abspath(train_images_dir),
-        'val': os.path.abspath(validation_images_dir),
-        'nc': len(classes),
-        'names': classes
-    }
-    data_yml = os.path.join(dataset_dir, 'data.yml')
-    dict_to_yaml(d, data_yml)
-    # save_dir = normpath(req['save_dir'])
-    # Training yolo
-    train.run(data=data_yml, imgsz=image_size, weights=weight,
-              save_dir=save_dir, epochs=epochs, batch_size=batch_size,
-              project=save_dir, name='', exists_ok=True, log_url=log_url,
-              response_url=response_url, task_id=task_id)
-    # # delete temp file
-    # if os.path.exists('tmp') and os.path.isdir('tmp'):
-    #     shutil.rmtree('tmp')
-    # get end_url from os environment variable
+        d = {
+            'train': os.path.abspath(train_images_dir),
+            'val': os.path.abspath(validation_images_dir),
+            'nc': len(classes),
+            'names': classes
+        }
+        data_yml = os.path.join(dataset_dir, 'data.yml')
+        dict_to_yaml(d, data_yml)
+        # save_dir = normpath(req['save_dir'])
+        # Training yolo
+        train.run(data=data_yml, imgsz=image_size, weights=weight,
+                save_dir=save_dir, epochs=epochs, batch_size=batch_size,
+                project=save_dir, name='', exists_ok=True, log_url=log_url,
+                response_url=response_url, task_id=task_id)
+        # # delete temp file
+        # if os.path.exists('tmp') and os.path.isdir('tmp'):
+        #     shutil.rmtree('tmp')
+        # get end_url from os environment variable
 
-    return {'message': 'training is done'}
+        return {'message': 'training is done'}
+    except Exception as e:
+        print(str(e))
+        if except_url:
+            requests.post(url=except_url, data={'error message': e,
+                                                'task_id': task_id}, timeout=2)
+            return {'message': 'exception raised'}
