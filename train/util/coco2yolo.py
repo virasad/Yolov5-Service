@@ -18,14 +18,16 @@ class COCO2YOLO:
     def _load_images_info(self):
         images_info = {}
         for image in self.labels['images']:
-            id = image['id']
-            file_name = image['file_name']
-            if file_name.find('\\') > -1:
-                file_name = file_name[file_name.index('\\') + 1:]
-            w = image['width']
-            h = image['height']
-            images_info[id] = (file_name, w, h)
-
+            try:
+                id = image['id']
+                file_name = image['file_name']
+                if file_name.find('\\') > -1:
+                    file_name = file_name[file_name.index('\\') + 1:]
+                w = image['width']
+                h = image['height']
+                images_info[id] = (file_name, w, h)
+            except Exception as e:
+                print(str(e))
         return images_info
 
     def _bbox_2_yolo(self, bbox, img_w, img_h):
@@ -43,23 +45,28 @@ class COCO2YOLO:
     def _convert_anno(self, images_info):
         anno_dict = dict()
         for anno in self.labels['annotations']:
-            bbox = anno['bbox']
-            image_id = anno['image_id']
-            category_id = anno['category_id']
+            try: 
+                bbox = anno['bbox']
+                image_id = anno['image_id']
+                category_id = anno['category_id']
 
-            image_info = images_info.get(image_id)
-            image_name = image_info[0]
-            img_w = image_info[1]
-            img_h = image_info[2]
-            yolo_box = self._bbox_2_yolo(bbox, img_w, img_h)
+                image_info = images_info.get(image_id)
+                image_name = image_info[0]
+                img_w = image_info[1]
+                img_h = image_info[2]
+                yolo_box = self._bbox_2_yolo(bbox, img_w, img_h)
 
-            anno_info = (image_name, category_id, yolo_box)
-            anno_infos = anno_dict.get(image_id)
-            if not anno_infos:
-                anno_dict[image_id] = [anno_info]
-            else:
-                anno_infos.append(anno_info)
-                anno_dict[image_id] = anno_infos
+                anno_info = (image_name, category_id, yolo_box)
+                anno_infos = anno_dict.get(image_id)
+                if not anno_infos:
+                    anno_dict[image_id] = [anno_info]
+                else:
+                    anno_infos.append(anno_info)
+                    anno_dict[image_id] = anno_infos
+            except Exception as e:
+                print(anno)
+                print(str(e))
+                continue
         return anno_dict
 
     def save_classes(self):
