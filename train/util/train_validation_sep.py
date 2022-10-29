@@ -54,19 +54,23 @@ def separate_test_val(images_dir, txts_dir, dst_validatoion_dir, dst_train_dir, 
     # move validation images and txts
 
     for idx, image in enumerate(validation_images):
-        image_basename = os.path.basename(image)
-        image_name, image_extension = os.path.splitext(image_basename)
-        txt = validation_txts[idx]
-        shutil.move(image, os.path.join(validation_images_dir, image_basename))
-        shutil.move(txt, os.path.join(validation_txts_dir, os.path.basename(txt)))
-
+        try:
+            image_basename = os.path.basename(image)
+            image_name, image_extension = os.path.splitext(image_basename)
+            txt = validation_txts[idx]
+            shutil.move(image, os.path.join(validation_images_dir, image_basename))
+            shutil.move(txt, os.path.join(validation_txts_dir, os.path.basename(txt)))
+        except Exception as e:
+            print(str(e))
     # move train images and txts
     for idx, image in enumerate(train_images):
-        image_basename = os.path.basename(image)
-        image_name, image_extension = os.path.splitext(image_basename)
-        txt = train_txts[idx]
-        shutil.move(image, os.path.join(train_images_dir, image_basename))
-        shutil.move(txt, os.path.join(train_txts_dir, os.path.basename(txt)))
-
+        try:
+            image_basename = os.path.basename(image)
+            image_name, image_extension = os.path.splitext(image_basename)
+            txt = train_txts[idx]
+            shutil.move(image, os.path.join(train_images_dir, image_basename))
+            shutil.move(txt, os.path.join(train_txts_dir, os.path.basename(txt)))
+        except Exception as e:
+            print(str(e))
     print('Done')
     return train_images_dir, train_txts_dir, validation_images_dir, validation_txts_dir
