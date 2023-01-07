@@ -4,6 +4,9 @@ import requests
 import requests
 from fastapi import FastAPI
 
+from preimutils.object_detection.yolo import AMRLImageAug
+from preimutils.object_detection.yolo.coco2yolo import COCO2YOLO
+from utils.utils import mkdir_p, movefiles
 from util.coco2yolo import COCO2YOLO
 from util.train_validation_sep import separate_test_val
 from util.util import jsonfile2dict
@@ -48,7 +51,9 @@ async def train_model(labels: str,
                       response_url: str = None,
                       log_url: str = None,
                       classes: list = None,
-                      except_url: str = None):
+                      except_url: str = None,
+                      is_augment: bool = False,
+                      augment_params: dict = {}):
     try:
         if task_id == "":
             task_id = str(uuid.uuid4())
@@ -123,6 +128,40 @@ async def train_model(labels: str,
             validation_percentage=validation_split
         )
 
+        if is_augment:
+            mkdir_p('tmp')
+            os.makedirs(normpath('tmp/DATASET/yolo_train_augmented'))
+            os.makedirs(normpath('tmp/DATASET/yolo_validation_augmented'))
+            # Augment train Data
+            aug = AMRLImageAug(normpath(train_txts_dir),
+                               normpath(train_images_dir),
+                               normpath('tmp/DATASET/yolo_train_augmented'))
+            aug.auto_augmentation(**augment_params)
+
+            # Augment validation Data
+            aug = AMRLImageAug(normpath(validation_txts_dir),
+                               normpath(validation_images_dir),
+                               normpath('tmp/DATASET/yolo_validation_augmented'))
+            aug.auto_augmentation(**augment_params)
+
+            # Change directory to train yolo
+            os.makedirs('tmp/DATASET/yolo_data/images/train')
+            os.makedirs('tmp/DATASET/yolo_data/images/val')
+            os.makedirs('tmp/DATASET/yolo_data/labels/train')
+            os.makedirs('tmp/DATASET/yolo_data/labels/val')
+
+            movefiles(normpath('tmp/DATASET/yolo_validation_augmented/annotations'),
+                      normpath('tmp/DATASET/yolo_data/labels/val'))
+            movefiles(normpath('tmp/DATASET/yolo_validation_augmented/images'),
+                      normpath('tmp/DATASET/yolo_data/images/val'))
+            movefiles(normpath('tmp/DATASET/yolo_train_augmented/annotations'),
+                      normpath('tmp/DATASET/yolo_data/labels/train'))
+            movefiles(normpath('tmp/DATASET/yolo_train_augmented/images'),
+                      normpath('tmp/DATASET/yolo_data/images/train'))
+
+            train_images_dir = 'tmp/DATASET/yolo_data/images/train'
+            validation_images_dir = 'tmp/DATASET/yolo_data/images/val'
+
         d = {
             'train': os.path.abspath(train_images_dir),
             'val': os.path.abspath(validation_images_dir),
@@ -138,13 +177,19 @@ async def train_model(labels: str,
                 project=save_dir, name='', exists_ok=True, log_url=log_url,
                 response_url=response_url, task_id=task_id)
         # # delete temp file
-        # if os.path.exists('tmp') and os.path.isdir('tmp'):
-        #     shutil.rmtree('tmp')
+        if os.path.exists('tmp') and os.path.isdir('tmp'):
+            import shutil
+            shutil.rmtree('tmp')
         # get end_url from os environment variable
 
         return {'message': 'training is done'}
     except Exception as e:
         print(str(e))
+
+        if os.path.exists('tmp') and os.path.isdir('tmp'):
+            import shutil
+            shutil.rmtree('tmp')
+
         if except_url:
             requests.post(url=except_url, data={'error message': e,
                                                 'task_id': task_id}, timeout=2)
