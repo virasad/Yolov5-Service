@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from preimutils.object_detection.yolo import AMRLImageAug
 from preimutils.object_detection.yolo.coco2yolo import COCO2YOLO
-from utils.utils import mkdir_p, movefiles
+from util.util import mkdir_p, movefiles
 from util.coco2yolo import COCO2YOLO
 from util.train_validation_sep import separate_test_val
 from util.util import jsonfile2dict
