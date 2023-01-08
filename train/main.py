@@ -53,7 +53,8 @@ async def train_model(labels: str,
                       classes: list = None,
                       except_url: str = None,
                       is_augment: bool = False,
-                      augment_params: dict = {}):
+                      augment_params: dict = {},
+                      count_of_each: int = 2):
     try:
         if task_id == "":
             task_id = str(uuid.uuid4())
@@ -129,38 +130,39 @@ async def train_model(labels: str,
         )
 
         if is_augment:
-            mkdir_p('tmp')
-            os.makedirs(normpath('tmp/DATASET/yolo_train_augmented'))
-            os.makedirs(normpath('tmp/DATASET/yolo_validation_augmented'))
+            mkdir_p('/dataset/tmp')
+            augment_base_dir = "/dataset/tmp"
+            os.makedirs(normpath(f'{augment_base_dir}/yolo_train_augmented'))
+            os.makedirs(normpath(f'{augment_base_dir}/yolo_validation_augmented'))
             # Augment train Data
             aug = AMRLImageAug(normpath(train_txts_dir),
                                normpath(train_images_dir),
-                               normpath('tmp/DATASET/yolo_train_augmented'))
-            aug.auto_augmentation(**augment_params)
+                               normpath(f'{augment_base_dir}/yolo_train_augmented'))
+            aug.auto_augmentation(count_of_each=count_of_each)
 
             # Augment validation Data
             aug = AMRLImageAug(normpath(validation_txts_dir),
                                normpath(validation_images_dir),
-                               normpath('tmp/DATASET/yolo_validation_augmented'))
-            aug.auto_augmentation(**augment_params)
+                               normpath(f'{augment_base_dir}/yolo_validation_augmented'))
+            aug.auto_augmentation(count_of_each=count_of_each)
 
             # Change directory to train yolo
-            os.makedirs('tmp/DATASET/yolo_data/images/train')
-            os.makedirs('tmp/DATASET/yolo_data/images/val')
-            os.makedirs('tmp/DATASET/yolo_data/labels/train')
-            os.makedirs('tmp/DATASET/yolo_data/labels/val')
+            os.makedirs(f'{augment_base_dir}/yolo_data/images/train')
+            os.makedirs(f'{augment_base_dir}/yolo_data/images/val')
+            os.makedirs(f'{augment_base_dir}/yolo_data/labels/train')
+            os.makedirs(f'{augment_base_dir}/yolo_data/labels/val')
 
-            movefiles(normpath('tmp/DATASET/yolo_validation_augmented/annotations'),
-                      normpath('tmp/DATASET/yolo_data/labels/val'))
-            movefiles(normpath('tmp/DATASET/yolo_validation_augmented/images'),
-                      normpath('tmp/DATASET/yolo_data/images/val'))
-            movefiles(normpath('tmp/DATASET/yolo_train_augmented/annotations'),
-                      normpath('tmp/DATASET/yolo_data/labels/train'))
-            movefiles(normpath('tmp/DATASET/yolo_train_augmented/images'),
-                      normpath('tmp/DATASET/yolo_data/images/train'))
+            movefiles(normpath(f'{augment_base_dir}/yolo_validation_augmented/annotations'),
+                      normpath(f'{augment_base_dir}/yolo_data/labels/val'))
+            movefiles(normpath(f'{augment_base_dir}/yolo_validation_augmented/images'),
+                      normpath(f'{augment_base_dir}/yolo_data/images/val'))
+            movefiles(normpath(f'{augment_base_dir}/yolo_train_augmented/annotations'),
+                      normpath(f'{augment_base_dir}/yolo_data/labels/train'))
+            movefiles(normpath(f'{augment_base_dir}/yolo_train_augmented/images'),
+                      normpath(f'{augment_base_dir}/yolo_data/images/train'))
 
-            train_images_dir = 'tmp/DATASET/yolo_data/images/train'
-            validation_images_dir = 'tmp/DATASET/yolo_data/images/val'
+            train_images_dir = f'{augment_base_dir}/yolo_data/images/train'
+            validation_images_dir = f'{augment_base_dir}/yolo_data/images/val'
 
         d = {
             'train': os.path.abspath(train_images_dir),
