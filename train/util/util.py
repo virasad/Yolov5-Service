@@ -29,3 +29,7 @@ def jsonfile2dict(json_dir: str) -> dict:
     d = json.load(f)
     f.close()
     return d
+
+def remove_directory(dir: str) -> None:
+    if os.path.exists(dir) and os.path.isdir(dir):
+        shutil.rmtree(dir)

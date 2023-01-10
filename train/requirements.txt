@@ -1,5 +1,13 @@
 fastapi
 uvicorn
-preimutils==1.1.5
 opencv-python
 pandas
+pascal_voc_writer
+tqdm
+albumentations
+imutils
+imageio
+pycocotools
+shutils
+numpy
+xmltodict

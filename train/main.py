@@ -1,7 +1,6 @@
 import json
 import os
 import requests
-import requests
 from fastapi import FastAPI
 
 from preimutils.object_detection.yolo import AMRLImageAug
@@ -9,7 +8,7 @@ from preimutils.object_detection.yolo.coco2yolo import COCO2YOLO
 from util.util import mkdir_p, movefiles
 from util.coco2yolo import COCO2YOLO
 from util.train_validation_sep import separate_test_val
-from util.util import jsonfile2dict
+from util.util import jsonfile2dict, remove_directory
 from util.yaml_file import dict_to_yaml
 from yolov5 import train
 import uuid
@@ -53,8 +52,9 @@ async def train_model(labels: str,
                       classes: list = None,
                       except_url: str = None,
                       is_augment: bool = False,
-                      augment_params: dict = {},
-                      count_of_each: int = 2):
+                      count_of_each: int = 2,
+                      from_scratch: bool = False,
+                      ):
     try:
         if task_id == "":
             task_id = str(uuid.uuid4())
@@ -72,14 +72,14 @@ async def train_model(labels: str,
                             'yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}
             # v5 should have the image size of 640 x 640 and v6 should have the image size of 1280 x 1280
         if weight in weights_v5:
-            if image_size != 640:
+            '''if image_size != 640:
                 return {
-                    'message': 'image_size must be 640 for yolov5n.pt, yolov5s.pt, yolov5m.pt, yolov5l.pt, yolov5x.pt'}
+                    'message': 'image_size must be 640 for yolov5n.pt, yolov5s.pt, yolov5m.pt, yolov5l.pt, yolov5x.pt'}'''
 
         elif weight in weights_v6:
-            if image_size != 1280:
+            '''if image_size != 1280:
                 return {
-                    'message': 'image_size must be 1280 for yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}
+                    'message': 'image_size must be 1280 for yolov5n6.pt, yolov5s6.pt, yolov5m6.pt, yolov5l6.pt, yolov5x6.pt'}'''
         images_path = normpath(images_path)
         labels = normpath(labels)
         dataset_dir = os.path.dirname(images_path)
@@ -174,24 +174,25 @@ async def train_model(labels: str,
         dict_to_yaml(d, data_yml)
         # save_dir = normpath(req['save_dir'])
         # Training yolo
-        train.run(data=data_yml, imgsz=image_size, weights=weight,
-                save_dir=save_dir, epochs=epochs, batch_size=batch_size,
-                project=save_dir, name='', exists_ok=True, log_url=log_url,
-                response_url=response_url, task_id=task_id)
+        if from_scratch:
+            cfg_type = weight.replace('.pt', '.yaml')
+            train.run(data=data_yml, imgsz=image_size, weights='', cfg=cfg_type,
+                      save_dir=save_dir, epochs=epochs, batch_size=batch_size,
+                      project=save_dir, name='', exists_ok=True, log_url=log_url,
+                      response_url=response_url, task_id=task_id)
+        else:
+            train.run(data=data_yml, imgsz=image_size, weights=weight,
+                      save_dir=save_dir, epochs=epochs, batch_size=batch_size,
+                      project=save_dir, name='', exists_ok=True, log_url=log_url,
+                      response_url=response_url, task_id=task_id)
         # # delete temp file
-        if os.path.exists('tmp') and os.path.isdir('tmp'):
-            import shutil
-            shutil.rmtree('tmp')
+        remove_directory('tmp')
         # get end_url from os environment variable
 
         return {'message': 'training is done'}
     except Exception as e:
         print(str(e))
-
-        if os.path.exists('tmp') and os.path.isdir('tmp'):
-            import shutil
-            shutil.rmtree('tmp')
-
+        remove_directory('tmp')
         if except_url:
             requests.post(url=except_url, data={'error message': e,
                                                 'task_id': task_id}, timeout=2)
