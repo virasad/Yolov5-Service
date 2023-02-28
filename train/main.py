@@ -10,7 +10,7 @@ from util.coco2yolo import COCO2YOLO
 from util.train_validation_sep import separate_test_val
 from util.util import jsonfile2dict, remove_directory
 from util.yaml_file import dict_to_yaml
-from yolov5 import train
+from yolov7 import train
 import uuid
 
 normpath = os.path.normpath
@@ -41,7 +41,7 @@ async def train_model(labels: str,
                       images_path: str,
                       image_size: int = 640,
                       epochs: int = 100,
-                      weight: str = "yolov5n.pt",
+                      weight: str = "yolov7_training.pt",
                       validation_split: float = 0.2,
                       data_type: str = "yolo",
                       save_dir: str = "results/",
@@ -55,6 +55,7 @@ async def train_model(labels: str,
                       count_of_each: int = 2,
                       from_scratch: bool = False,
                       ):
+    
     try:
         if task_id == "":
             task_id = str(uuid.uuid4())
@@ -173,26 +174,31 @@ async def train_model(labels: str,
         data_yml = os.path.join(dataset_dir, 'data.yml')
         dict_to_yaml(d, data_yml)
         # save_dir = normpath(req['save_dir'])
+        if not os.path.exists('yolov7_training.pt'):
+            os.system("wget https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7_training.pt")
+
         # Training yolo
         if from_scratch:
             cfg_type = weight.replace('.pt', '.yaml')
-            train.run(data=data_yml, imgsz=image_size, weights='', cfg=cfg_type,
+            train.run(data=data_yml, imgsz=image_size, weights='', cfg='yolov7/cfg/training/yolov7.yaml',
                       save_dir=save_dir, epochs=epochs, batch_size=batch_size,
+                      hyp='yolov7/data/hyp.scratch.p5.yaml',
                       project=save_dir, name='', exists_ok=True, log_url=log_url,
                       response_url=response_url, task_id=task_id)
         else:
-            train.run(data=data_yml, imgsz=image_size, weights=weight,
+            train.run(data=data_yml, imgsz=image_size, weights='yolov7_training.pt', cfg='yolov7/cfg/training/yolov7.yaml',
                       save_dir=save_dir, epochs=epochs, batch_size=batch_size,
+                      hyp='yolov7/data/hyp.scratch.custom.yaml',
                       project=save_dir, name='', exists_ok=True, log_url=log_url,
                       response_url=response_url, task_id=task_id)
         # # delete temp file
-        remove_directory('tmp')
+        remove_directory(augment_base_dir)
         # get end_url from os environment variable
 
         return {'message': 'training is done'}
     except Exception as e:
         print(str(e))
-        remove_directory('tmp')
+        remove_directory(augment_base_dir)
         if except_url:
             requests.post(url=except_url, data={'error message': e,
                                                 'task_id': task_id}, timeout=2)
