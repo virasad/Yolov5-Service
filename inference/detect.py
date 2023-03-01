@@ -1,10 +1,12 @@
 import torch
-
+from train.yolov7.models.common import autoShape
+from train.yolov7.utils.torch_utils import select_device
 
 class Detector():
-    def set_model(self, model_path):
-        self.model = torch.hub.load(
-            'ultralytics/yolov5', 'custom', path=model_path)
+    def set_model(self, model_path, device=None):
+        self.device = select_device(device)
+        self.model = autoShape(model)
+        self.model.to(self.device)
 
     def detect(self, img):
         """
