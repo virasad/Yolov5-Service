@@ -107,8 +107,8 @@ class AMRLImageAug:
             No return
         """
         filters_of_aug = [
-           A.RandomSizedBBoxSafeCrop(width=448, height=336, erosion_rate=0.1, p=0.1),
-            #A.RandomRotate90(p=0.2),
+            #A.RandomSizedBBoxSafeCrop(width=448, height=336, erosion_rate=0.1, p=0.1),
+            A.Rotate(limit=[180,180], p=0.2),
             A.RandomBrightnessContrast(p=0.2),
             A.RandomShadow(p=0.1),
             A.RandomSnow(snow_point_lower=0.1,
@@ -120,10 +120,10 @@ class AMRLImageAug:
             A.MotionBlur(p=0.1),
             A.MedianBlur(p=0.2),
             A.ISONoise(p=0.2),
-            A.Posterize(p=0.2),
+            #A.Posterize(p=0.2),
             #A.Perspective(p=0.1),
-            A.PiecewiseAffine(p=0.1, scale=(0.01, 0.02)),
-            A.Emboss(p=0.2),
+            #A.PiecewiseAffine(p=0.1, scale=(0.01, 0.02)),
+            #A.Emboss(p=0.2),
         ]
         if resize:
             filters_of_aug.append(A.Resize(width, height, always_apply=True))
