@@ -57,6 +57,7 @@ from utils.metrics import fitness
 from utils.plots import plot_evolve, plot_labels
 from utils.torch_utils import (EarlyStopping, ModelEMA, de_parallel, select_device, smart_DDP, smart_optimizer,
                                smart_resume, torch_distributed_zero_first)
+import export
 
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -462,9 +463,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         "max_epoch": epochs,
                         'weight_path': os.path.abspath(best),
                         "task_id": opt.task_id,
+                        "onnx_weight_path": "/weights/weights/best.onnx"
                     }
                     if opt.response_url:
                         log_result = json.dumps(log_dict)
+                        export.run(weights="/weights/weights/best.pt", include=("onnx",))
                         resp = requests.post(opt.response_url, json=log_result)
 
                         if resp.status_code != 200:
