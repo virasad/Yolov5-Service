@@ -91,18 +91,18 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
 
     # Loggers
     data_dict = None
-    if RANK in {-1, 0}:
-        loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
-        if loggers.clearml:
-            data_dict = loggers.clearml.data_dict  # None if no ClearML dataset or filled in by ClearML
-        if loggers.wandb:
-            data_dict = loggers.wandb.data_dict
-            if resume:
-                weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
+    # if RANK in {-1, 0}:
+        # loggers = Loggers(save_dir, weights, opt, hyp, LOGGER)  # loggers instance
+        # if loggers.clearml:
+        #     data_dict = loggers.clearml.data_dict  # None if no ClearML dataset or filled in by ClearML
+        # if loggers.wandb:
+        #     data_dict = loggers.wandb.data_dict
+        #     if resume:
+        #         weights, epochs, hyp, batch_size = opt.weights, opt.epochs, opt.hyp, opt.batch_size
 
-        # Register actions
-        for k in methods(loggers):
-            callbacks.register_action(k, callback=getattr(loggers, k))
+        # # Register actions
+        # for k in methods(loggers):
+        #     callbacks.register_action(k, callback=getattr(loggers, k))
 
     # Config
     plots = not evolve and not opt.noplots  # create plots
@@ -149,7 +149,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
     # Batch size
     if RANK == -1 and batch_size == -1:  # single-GPU only, estimate best batch size
         batch_size = check_train_batch_size(model, imgsz, amp)
-        loggers.on_params_update({"batch_size": batch_size})
+        # loggers.on_params_update({"batch_size": batch_size})
 
     # Optimizer
     nbs = 64  # nominal batch size
@@ -378,15 +378,15 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                 "epoch": epoch + 1,
                 "max_epoch": epochs,
                 "is_finished": final_epoch,
-                "task_id": opt.task_id,
+                # "task_id": opt.task_id,
             }
             print(log_dict)
-            if opt.log_url:
-                log_result = json.dumps(log_dict)
-                resp = requests.post(opt.log_url, json=log_result)
+            # if opt.log_url:
+            #     log_result = json.dumps(log_dict)
+            #     resp = requests.post(opt.log_url, json=log_result)
 
-                if resp.status_code != 200:
-                    print(f"log didn't send, code {resp.status_code}")
+            #     if resp.status_code != 200:
+            #         print(f"log didn't send, code {resp.status_code}")
 
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
             stop = stopper(epoch=epoch, fitness=fi)  # early stop check
@@ -404,7 +404,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     'ema': deepcopy(ema.ema).half(),
                     'updates': ema.updates,
                     'optimizer': optimizer.state_dict(),
-                    'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
+                    # 'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None,
                     'opt': vars(opt),
                     'date': datetime.now().isoformat()}
 
@@ -462,7 +462,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                         "epoch": epoch + 1,
                         "max_epoch": epochs,
                         'weight_path': os.path.abspath(best),
-                        "task_id": opt.task_id,
+                        # "task_id": opt.task_id,
                         "onnx_weight_path": "/weights/weights/best.onnx"
                     }
                     if opt.response_url:
@@ -486,7 +486,8 @@ def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    # parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data.yaml', help='Path to custom dataset')
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch-low.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs, -1 for autobatch')
@@ -672,6 +673,64 @@ def main(opt, callbacks=Callbacks()):
                     f'Usage example: $ python train.py --hyp {evolve_yaml}')
 
 
+# upload customize dataset
+def load_data_from_json(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data
+
+def download_images(images, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    for url in images:
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                image_name = url.split('/')[-1]
+                image_path = os.path.join(output_dir, image_name)
+                with open(image_path, 'wb') as f:
+                    f.write(response.content)
+                print(f"Downloaded: {image_name}")
+            else:
+                print(f"Failed to download: {url} (Status code: {response.status_code})")
+        except requests.exceptions.MissingSchema:
+            print(f"Invalid URL: {url}")
+
+
+# file_path = ROOT / 'back_light.json' 
+# data = load_data_from_json(file_path)
+# label = [[item['name'], item['id']] for item in data['categories']]
+# train_data = [[item['image_id'], item['category_id'], item['bbox']] for item in data['annotations']]
+# images = [[item['id'], item['width'], item['height']] for item in data['images']]
+# dataset = []
+# # with open(ROOT / 'image_url.json', 'w') as f:
+# for i in label:
+#     for j in train_data:
+#         for k in images:
+#             if i[1] ==j[1]:
+#                 if j[0] == k[0]:
+#                     # f.write('[')
+#                     dataset.append([i[1], i[0], j[0], j[2], k[1], k[2]])
+#                     # download_images([j[0]], ROOT / 'download_image')
+#                     # json.dump(j[0], f)
+#                     # f.write('],')
+
+
+# for item in dataset:
+#     image_id = item[2]
+#     image_width = item[4]
+#     image_height = item[5]
+#     image_bbox = item[3]
+#     class_id = item[0]
+#     label_file = open(ROOT / f'download_image/labels/{image_id}.txt', 'w')
+#     x_center = image_bbox[0] + image_bbox[2] / 2
+#     y_center = image_bbox[1] + image_bbox[3] / 2
+#     width = image_bbox[2]
+#     height = image_bbox[3]
+#     label_file.write(f"{class_id-1} {x_center / image_width} {y_center / image_height} {width / image_width} {height / image_height}\n")
+# label_file.close()
+
+
+# [9, '9ZDG', 13635, [647.0, 185.0, 105.0, 21.0]]
 def run(**kwargs):
     # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
     opt = parse_opt(True)
@@ -684,3 +743,6 @@ def run(**kwargs):
 if __name__ == "__main__":
     opt = parse_opt()
     main(opt)
+
+
+
