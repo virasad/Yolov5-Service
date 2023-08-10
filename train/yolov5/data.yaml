@@ -1,0 +1,12 @@
+path: I:\compani\virasad\fabriqc\Yolov5-Service\train\yolov5\download_image\  # dataset root dir
+train: ./images  # train images (relative to 'path') 128 images
+val: ./images  # val images (relative to 'path') 128 images
+test:  # test images (optional)
+
+# Classes
+nc: 9  # number of classes
+names: ['1PMLKH', '2OP', '3SSH', '4AGH', '5SKH', '6LCR', '7PLTN', '8RGHN', '9ZDG']  # class names
+
+
+# Download script/URL (optional)
+download: 
