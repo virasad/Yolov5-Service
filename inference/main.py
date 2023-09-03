@@ -11,6 +11,7 @@ import numpy as np
 import cv2
 from starlette.responses import StreamingResponse
 import json
+import time
 
 app = FastAPI(title="YOLOv5 Service")
 
@@ -42,6 +43,18 @@ async def set_model(request: Request, model_path: str = Form(...)):
     model_path = form_data.get('model_path')
     detector.set_model(model_path)
     return {'message': 'ok'}
+
+
+@app.post(os.path.join(DETECTION_URL, 'add-model'))
+async def add_model(request: Request, file: UploadFile = File(...)):
+    _file = await file.read()
+    model_path = "/weights/best.pt"
+    with open(model_path, "wb+") as f:
+        f.write(_file)
+    s = time.time()
+    detector.set_model(model_path)
+    x = time.time() - s
+    return {'message': f'ok in {x}'}
 
 
 color_clases = {

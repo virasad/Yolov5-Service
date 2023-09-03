@@ -4,7 +4,7 @@ import torch
 class Detector():
     def set_model(self, model_path):
         self.model = torch.hub.load(
-            'ultralytics/yolov5', 'custom', path=model_path)
+            "/code/yolov5/", 'custom', source='local', path=model_path)
 
     def detect(self, img):
         """
