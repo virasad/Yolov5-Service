@@ -17,6 +17,8 @@ class Exp(MyExp):
         self.data_dir = "datasets/coco128"
         self.train_ann = "instances_train2017.json"
         self.val_ann = "instances_val2017.json"
+        
+        self.input_size = (640, 640)  # (height, width)
 
         self.num_classes = 71
 
