@@ -1,30 +1,38 @@
+import json
 import os
-from .util import jsonfile2dict
+from pprint import pprint
+
+
+def jsonfile2dict(json_dir: str) -> dict:
+    f = open(json_dir, "r")
+    d = json.load(f)
+    f.close()
+    return d
 
 
 class COCO2YOLO:
     def __init__(self, annotations_dict, output):
         self.labels = annotations_dict
         self.coco_id_name_map = self._categories()
-        self.coco_name_list = list(self.coco_id_name_map.values())
+        self.reverse_coco_id_name_map = {v: k for k, v in self.coco_id_name_map.items()}
         self.output = output
 
     def _categories(self):
         categories = {}
-        for cls in self.labels['categories']:
-            categories[cls['id']] = cls['name']
+        for cls in self.labels["categories"]:
+            categories[cls["id"]] = cls["name"]
         return categories
 
     def _load_images_info(self):
         images_info = {}
-        for image in self.labels['images']:
+        for image in self.labels["images"]:
             try:
-                id = image['id']
-                file_name = image['file_name']
-                if file_name.find('\\') > -1:
-                    file_name = file_name[file_name.index('\\') + 1:]
-                w = image['width']
-                h = image['height']
+                id = image["id"]
+                file_name = image["file_name"]
+                if file_name.find("\\") > -1:
+                    file_name = file_name[file_name.index("\\") + 1 :]
+                w = image["width"]
+                h = image["height"]
                 images_info[id] = (file_name, w, h)
             except Exception as e:
                 print(str(e))
@@ -44,11 +52,11 @@ class COCO2YOLO:
 
     def _convert_anno(self, images_info):
         anno_dict = dict()
-        for anno in self.labels['annotations']:
-            try: 
-                bbox = anno['bbox']
-                image_id = anno['image_id']
-                category_id = anno['category_id']
+        for anno in self.labels["annotations"]:
+            try:
+                bbox = anno["bbox"]
+                image_id = anno["image_id"]
+                category_id = anno["category_id"]
 
                 image_info = images_info.get(image_id)
                 image_name = image_info[0]
@@ -70,15 +78,24 @@ class COCO2YOLO:
         return anno_dict
 
     def save_classes(self):
-        sorted_classes = list(map(lambda x: x['name'], sorted(self.labels['categories'], key=lambda x: x['id'])))
-        with open('coco.names', 'w', encoding='utf-8') as f:
+        sorted_classes = list(
+            map(
+                lambda x: x["name"],
+                sorted(self.labels["categories"], key=lambda x: x["id"]),
+            )
+        )
+        with open("coco.names", "w", encoding="utf-8") as f:
             for cls in sorted_classes:
-                f.write(cls + '\n')
+                f.write(cls + "\n")
         f.close()
 
     def get_classes(self):
-        return list(map(lambda x: x['name'], sorted(self.labels['categories'], key=lambda x: x['id'])))
-
+        return list(
+            map(
+                lambda x: x["name"],
+                sorted(self.labels["categories"], key=lambda x: x["id"]),
+            )
+        )
 
     def coco2yolo(self):
         images_info = self._load_images_info()
@@ -90,18 +107,22 @@ class COCO2YOLO:
     def _save_txt(self, anno_dict):
         for k, v in anno_dict.items():
             ext_name = v[0][0].split(".")[-1]
-            file_name = v[0][0].replace(ext_name, 'txt')
-            with open(os.path.join(self.output, file_name), 'w', encoding='utf-8') as f:
+            file_name = v[0][0].replace(ext_name, "txt")
+            with open(os.path.join(self.output, file_name), "w", encoding="utf-8") as f:
                 for obj in v:
                     cat_name = self.coco_id_name_map.get(obj[1])
-                    category_id = self.coco_name_list.index(cat_name)
-                    box = ['{:.6f}'.format(x) for x in obj[2]]
-                    box = ' '.join(box)
-                    line = str(category_id) + ' ' + box
-                    f.write(line + '\n')
+                    category_id = self.reverse_coco_id_name_map[cat_name]
+                    box = ["{:.6f}".format(x) for x in obj[2]]
+                    box = " ".join(box)
+                    line = str(category_id) + " " + box
+                    f.write(line + "\n")
 
 
 def convert_COCO2YOLO(coco_json_path: str, ouput_path: str):
     annotations = jsonfile2dict(coco_json_path)
     c2y = COCO2YOLO(annotations, ouput_path)
     c2y.coco2yolo()
+
+
+if __name__ == "__main__":
+    convert_COCO2YOLO("annotations.json", "C:/Users/ktrn/Downloads")
