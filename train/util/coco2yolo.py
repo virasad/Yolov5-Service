@@ -1,13 +1,6 @@
-import json
 import os
-from pprint import pprint
 
-
-def jsonfile2dict(json_dir: str) -> dict:
-    f = open(json_dir, "r")
-    d = json.load(f)
-    f.close()
-    return d
+from util import jsonfile2dict
 
 
 class COCO2YOLO:
@@ -122,7 +115,3 @@ def convert_COCO2YOLO(coco_json_path: str, ouput_path: str):
     annotations = jsonfile2dict(coco_json_path)
     c2y = COCO2YOLO(annotations, ouput_path)
     c2y.coco2yolo()
-
-
-if __name__ == "__main__":
-    convert_COCO2YOLO("annotations.json", "C:/Users/ktrn/Downloads")
