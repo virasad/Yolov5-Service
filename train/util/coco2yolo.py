@@ -1,6 +1,6 @@
 import os
 
-from util import jsonfile2dict
+from .util import jsonfile2dict
 
 
 class COCO2YOLO:
@@ -104,7 +104,7 @@ class COCO2YOLO:
             with open(os.path.join(self.output, file_name), "w", encoding="utf-8") as f:
                 for obj in v:
                     cat_name = self.coco_id_name_map.get(obj[1])
-                    category_id = self.reverse_coco_id_name_map[cat_name]
+                    category_id = int(self.reverse_coco_id_name_map[cat_name]) - 1
                     box = ["{:.6f}".format(x) for x in obj[2]]
                     box = " ".join(box)
                     line = str(category_id) + " " + box
