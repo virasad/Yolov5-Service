@@ -1,0 +1,18 @@
+{
+    "url": "http://train:5551/train",
+    "data": {
+        "label_file_str": "/dataset/annotations.json",
+        "image_dir_str": "/dataset/images",
+        "image_size": 640,
+        "epochs": 100,
+        "weight": "yolov5s.pt",
+        "data_type": "coco",
+        "save_dir": "/weights/",
+        "task_id": 70,
+        "batch_size": 16,
+        "response_url": "http://web:8010/train-done/",
+        "log_url": "http://web:8010/log-train-status/",
+        "except_url": "http://web:8010/train_exception/",
+        "classes": 2
+    }
+}

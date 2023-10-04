@@ -7,7 +7,9 @@ class COCO2YOLO:
     def __init__(self, annotations_dict, output):
         self.labels = annotations_dict
         self.coco_id_name_map = self._categories()
-        self.reverse_coco_id_name_map = {v: k for k, v in self.coco_id_name_map.items()}
+        self.reverse_coco_id_name_map = {
+            v: k for k, v in self.coco_id_name_map.items()
+        }
         self.output = output
 
     def _categories(self):
@@ -101,10 +103,14 @@ class COCO2YOLO:
         for k, v in anno_dict.items():
             ext_name = v[0][0].split(".")[-1]
             file_name = v[0][0].replace(ext_name, "txt")
-            with open(os.path.join(self.output, file_name), "w", encoding="utf-8") as f:
+            with open(
+                os.path.join(self.output, file_name), "w", encoding="utf-8"
+            ) as f:
                 for obj in v:
                     cat_name = self.coco_id_name_map.get(obj[1])
-                    category_id = int(self.reverse_coco_id_name_map[cat_name]) - 1
+                    category_id = (
+                        int(self.reverse_coco_id_name_map[cat_name]) - 1
+                    )
                     box = ["{:.6f}".format(x) for x in obj[2]]
                     box = " ".join(box)
                     line = str(category_id) + " " + box
