@@ -171,6 +171,5 @@ __pycache__
 .idea
 
 dataset/
-*.pt
 results*/
 wandb/

@@ -1,6 +1,9 @@
 import json
 import requests
 from fastapi import FastAPI
+import yaml
+import urllib
+import os
 
 from util.coco2yolo import COCO2YOLO
 from util.util import (
@@ -35,10 +38,12 @@ async def train_model(
     train_test_ratio: list = [0.8, 0.2],
     data_type: str = "coco",
     save_dir: str = "/weights/",
+    stream_id: str = "",
     task_id: str = "",
     batch_size: int = 16,
     response_url: str = "",
     log_url: str = "",
+    info_url: str = "",
     except_url: str = "",
     use_augmentation: bool = False,
     classes: list = [],
@@ -92,44 +97,52 @@ async def train_model(
             "val": str(val_image_dir.resolve()),
             "nc": len(classes),
             "names": classes,
+            "job_id": task_id,
         }
+
+        last_weight = weight
+        print("CHECKING FOR LAST WEIGHT")
+        if last_data := json.loads(
+            requests.get(
+                info_url, json=json.dumps({"stream_id": stream_id})
+            ).json()
+        ):
+            print("LAST WEIGHT FOUND")
+            try:
+                print(data["names"], last_data["names"])
+                if data["names"] == last_data["names"]:
+                    last_weight = f"{last_data['job_id']}.pt"
+                    src_last_weight = (
+                        f"http://{os.environ.get('LOCAL_DOMAIN')}/oms/"
+                        / f"/oms/1/stream_{stream_id}/trains/{last_weight}"
+                    )
+                    print("ADDITIONAL TRAINING ", src_last_weight)
+                    urllib.request.urlretrieve(src_last_weight, last_weight)
+                else:
+                    print("FROM SCRATCH")
+            except Exception as e:
+                print(e)
+                print("FROM SCRATCH")
         data_yml_path = dataset_dir / "data.yaml"
         dict_to_yaml(data, data_yml_path)
         # Training yolo
-        from_scratch = True
-        print(f"weight: {weight}")
-        if from_scratch:
-            cfg_type = weight.replace(".pt", ".yaml")
-            train.run(
-                data=data_yml_path,
-                imgsz=image_size,
-                weights="",
-                cfg=cfg_type,
-                save_dir=save_dir,
-                epochs=epochs,
-                batch_size=batch_size,
-                project=save_dir,
-                name="",
-                exists_ok=True,
-                log_url=log_url,
-                response_url=response_url,
-                task_id=task_id,
-            )
-        else:
-            train.run(
-                data=data_yml_path,
-                imgsz=image_size,
-                weights=weight,
-                save_dir=save_dir,
-                epochs=epochs,
-                batch_size=batch_size,
-                project=save_dir,
-                name="",
-                exists_ok=True,
-                log_url=log_url,
-                response_url=response_url,
-                task_id=task_id,
-            )
+        cfg_type = weight.replace(".pt", ".yaml")
+        train.run(
+            data=data_yml_path,
+            imgsz=image_size,
+            weights=last_weight,
+            cfg=cfg_type,
+            save_dir=save_dir,
+            epochs=epochs,
+            batch_size=batch_size,
+            project=save_dir,
+            name="",
+            exists_ok=True,
+            log_url=log_url,
+            response_url=response_url,
+            task_id=task_id,
+        )
+
         return {"message": "training is done"}
     except Exception as e:
         if except_url:
@@ -143,6 +156,8 @@ async def train_model(
         shutil.rmtree(train_dir)
         shutil.rmtree(test_dir)
         remove_pycache(".")
+        if last_weight != "yolov5s.pt":
+            os.remove(f"{last_data['job_id']}.pt")
 
 
 def remove_pycache(path):
