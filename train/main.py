@@ -100,8 +100,8 @@ async def train_model(
             "job_id": task_id,
         }
 
-        last_weight = weight
         print("CHECKING FOR LAST WEIGHT")
+        last_weight = weight
         if last_data := json.loads(
             requests.get(
                 info_url, json=json.dumps({"stream_id": stream_id})
@@ -112,10 +112,7 @@ async def train_model(
                 print(data["names"], last_data["names"])
                 if data["names"] == last_data["names"]:
                     last_weight = f"{last_data['job_id']}.pt"
-                    src_last_weight = (
-                        f"http://{os.environ.get('LOCAL_DOMAIN')}/oms/"
-                        / f"/oms/1/stream_{stream_id}/trains/{last_weight}"
-                    )
+                    src_last_weight = f"http://{os.environ.get('LOCAL_DOMAIN')}/oms//oms/1/stream_{stream_id}/trains/{last_weight}"
                     print("ADDITIONAL TRAINING ", src_last_weight)
                     urllib.request.urlretrieve(src_last_weight, last_weight)
                 else:
@@ -156,8 +153,11 @@ async def train_model(
         shutil.rmtree(train_dir)
         shutil.rmtree(test_dir)
         remove_pycache(".")
-        if last_weight != "yolov5s.pt":
-            os.remove(f"{last_data['job_id']}.pt")
+        try:
+            if last_weight != "yolov5s.pt":
+                os.remove(f"{last_data['job_id']}.pt")
+        except Exception:
+            pass
 
 
 def remove_pycache(path):
