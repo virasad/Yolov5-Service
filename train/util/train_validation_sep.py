@@ -32,6 +32,11 @@ def separate_test_val(images_dir, txts_dir, dst_validatoion_dir, dst_train_dir, 
             images.append(image)
         except IndexError:
             print('{} not exist'.format(image_name + '*.txt'))
+            with open(os.path.join(txts_dir, image_name + ".txt"), 'w', encoding='utf-8') as f:
+                pass
+            txts.append(os.path.join(txts_dir, image_name + ".txt"))
+            images.append(image)
+            print('{} not exist'.format(image_name + '*.txt'))
 
     # separate validation and train
     validation_max_index = int(validation_percentage * len(images))
